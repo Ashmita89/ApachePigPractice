@@ -1,0 +1,30 @@
+
+/*2. Rank the cities by avg (# of stars) for each category, by city.*/
+REGISTER '/home/Ashmita/hadoop/Ashmita/Docker/twitterjars/elephant-bird-core-4.13.jar';
+REGISTER '/home/Ashmita/hadoop/Ashmita/Docker/twitterjars/elephant-bird-hadoop-compat-4.13.jar';
+REGISTER '/home/Ashmita/hadoop/Ashmita/Docker/twitterjars/elephant-bird-pig-4.13.jar';
+REGISTER '/home/Ashmita/hadoop/Ashmita/Docker/Datafujar/datafu-1.2.0.jar';
+DEFINE TwitterJsonLoader com.twitter.elephantbird.pig.load.JsonLoader('- nestedLoad=true ');
+DEFINE Enumerate datafu.pig.bags.Enumerate('1');
+
+JsonInput = LOAD '/user/cloudera/yelpdataset/yelp_academic_dataset_business.json' USING TwitterJsonLoader() AS (entity: map[]);
+rawtable = FOREACH JsonInput GENERATE (CHARARRAY)$0#'business_id' as business_id, (CHARARRAY)$0#'city' as city,(CHARARRAY)$0#'categories' as categories:chararray,(double)$0#'stars' as stars:double;
+tok_table = FOREACH rawtable  GENERATE business_id,city,TOKENIZE(categories,',') as cattuple,stars;
+tup_table = FOREACH tok_table GENERATE business_id,city,FLATTEN(cattuple) as dup_category,stars;
+cle_data = FOREACH tup_table GENERATE business_id,city,REPLACE(dup_category,'\\"','') as category,stars;
+clean_table = FOREACH cle_data GENERATE business_id,city,REPLACE(category,'\\[','') as category,stars;
+clean_table = FOREACH clean_table GENERATE business_id,city,REPLACE(category,'\\]','') as category,(double)stars;
+by_category_city = GROUP clean_table BY (category,city);
+avg_stars_by_cat_city =  FOREACH by_category_city GENERATE FLATTEN(group) AS (city,category),AVG(clean_table.stars) as avg_rating:double;
+avg_stars_by_cat_city_group_city = GROUP avg_stars_by_cat_city BY city;
+city_ranks = FOREACH avg_stars_by_cat_city_group_city {
+sorted = ORDER $1 BY avg_rating DESC;
+GENERATE group,sorted;
+};
+city_ranks1 = FOREACH city_ranks GENERATE FLATTEN(Enumerate(sorted));
+STORE by_category_city into './Question2/by_category_city';
+STORE avg_stars_by_cat_city into './Question2/avg_stars_by_cat_city'; 
+STORE avg_stars_by_cat_city_group_city into './Question2/avg_stars_by_cat_city_group_city';
+STORE city_ranks into './Question2/city_ranks';
+STORE city_ranks1 into './Question2/city_ranks1';
+

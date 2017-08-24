@@ -1,0 +1,13 @@
+[0m[[0minfo[0m] [0mPackaging C:\Users\Ashmita\Documents\BigData\sbt\spark-wordcount\target\scala-2.10\word-count_2.10-1.0.jar ...[0m
+[0m[[0mdebug[0m] [0mInput file mappings:[0m
+[0m[[0mdebug[0m] [0m	SparkWordCount$.class[0m
+[0m[[0mdebug[0m] [0m	  C:\Users\Ashmita\Documents\BigData\sbt\spark-wordcount\target\scala-2.10\classes\SparkWordCount$.class[0m
+[0m[[0mdebug[0m] [0m	SparkWordCount.class[0m
+[0m[[0mdebug[0m] [0m	  C:\Users\Ashmita\Documents\BigData\sbt\spark-wordcount\target\scala-2.10\classes\SparkWordCount.class[0m
+[0m[[0mdebug[0m] [0m	SparkWordCount$$anonfun$1.class[0m
+[0m[[0mdebug[0m] [0m	  C:\Users\Ashmita\Documents\BigData\sbt\spark-wordcount\target\scala-2.10\classes\SparkWordCount$$anonfun$1.class[0m
+[0m[[0mdebug[0m] [0m	SparkWordCount$$anonfun$2.class[0m
+[0m[[0mdebug[0m] [0m	  C:\Users\Ashmita\Documents\BigData\sbt\spark-wordcount\target\scala-2.10\classes\SparkWordCount$$anonfun$2.class[0m
+[0m[[0mdebug[0m] [0m	SparkWordCount$$anonfun$3.class[0m
+[0m[[0mdebug[0m] [0m	  C:\Users\Ashmita\Documents\BigData\sbt\spark-wordcount\target\scala-2.10\classes\SparkWordCount$$anonfun$3.class[0m
+[0m[[0minfo[0m] [0mDone packaging.[0m

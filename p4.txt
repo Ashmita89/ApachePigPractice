@@ -1,0 +1,34 @@
+/*For the top 10 reviewers, show their average number of stars, by category.*/
+
+REGISTER '/home/Ashmita/hadoop/Ashmita/Docker/twitterjars/elephant-bird-core-4.13.jar';
+REGISTER '/home/Ashmita/hadoop/Ashmita/Docker/twitterjars/elephant-bird-hadoop-compat-4.13.jar';
+REGISTER '/home/Ashmita/hadoop/Ashmita/Docker/twitterjars/elephant-bird-pig-4.13.jar';
+DEFINE TwitterJsonLoader com.twitter.elephantbird.pig.load.JsonLoader('- nestedLoad=true ');
+JsonInputbus = LOAD '/user/cloudera/yelpdataset/yelp_academic_dataset_business.json' USING TwitterJsonLoader() AS (entity: map[]);
+rawtablebusiness = FOREACH JsonInputbus GENERATE (CHARARRAY)$0#'business_id' as business_id, (CHARARRAY)$0#'city' as city,(CHARARRAY)$0#'categories' as categories:chararray,(double)$0#'stars' as stars:double;
+JsonInputrev = LOAD '/user/cloudera/yelpdataset/yelp_academic_dataset_review.json' USING TwitterJsonLoader() AS (entity: map[]);
+rawtablereview = FOREACH JsonInputrev GENERATE (CHARARRAY)$0#'business_id' as business_id, (CHARARRAY)$0#'user_id' as user_id,(CHARARRAY)$0#'text' as text:chararray,(double)$0#'stars' as stars:double;
+JsonInputuser = LOAD '/user/cloudera/yelpdataset/yelp_academic_dataset_user.json' USING TwitterJsonLoader() AS (entity: map[]);
+rawtableuser = FOREACH JsonInputuser GENERATE (CHARARRAY)$0#'name' as name, (CHARARRAY)$0#'user_id' as user_id,(double)$0#'review_count' as review_count:double,(double)$0#'average_stars' as average_stars:double;
+
+/*Rank reviewers by no# of reviews*/
+rank_table = RANK rawtableuser BY review_count DESC;
+sorted = ORDER rank_table BY rank_rawtableuser ASC;
+top10reviewer = LIMIT sorted 10;
+STORE sorted into './Question4/Rank_reviewer';
+STORE top10reviewer into './Question4/Top10reviewer'; 
+
+/*Filter raw table business,review by user_id*/
+/*reviewfromtop10 = FILTER rawtablereview BY (user_id == top10reviewer :: user_id); */
+reviewfromtop10 = JOIN rawtablereview BY user_id,top10reviewer BY user_id;
+bus_rev_user = JOIN reviewfromtop10 BY business_id,rawtablebusiness BY business_id;
+
+tok_table = FOREACH bus_rev_user GENERATE reviewfromtop10::rawtablereview::business_id as business_id,reviewfromtop10::rawtablereview::user_id as user_id,TOKENIZE(rawtablebusiness::categories,',') as cattuple,reviewfromtop10::rawtablereview::stars as stars;
+tup_table = FOREACH tok_table GENERATE business_id,user_id,FLATTEN(cattuple) as dup_category,stars;
+cle_data = FOREACH tup_table GENERATE business_id,user_id,REPLACE(dup_category,'\\"','') as category,stars;
+clean_table = FOREACH cle_data GENERATE business_id,user_id,REPLACE(category,'\\[','') as category,stars;
+clean_table = FOREACH clean_table GENERATE business_id,user_id,REPLACE(category,'\\]','') as category,(double)stars;
+by_user_category = GROUP clean_table BY (user_id,category);
+avg_stars = FOREACH by_user_category GENERATE FLATTEN(group) AS (user_id,category),AVG(clean_table.stars) AS Avg_Num_of_Stars;
+STORE by_user_category into './Question4/by_user_category';
+STORE avg_stars into './Question4/Result'; 

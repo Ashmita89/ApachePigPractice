@@ -1,0 +1,17 @@
+val us_states_file = "/home/Ashmita/hadoop/Ashmita/Docker/modified-us-states.js" 
+val us_states = sqlContext.read.json(us_states_file)
+us_states.registerTempTable("us_states")
+val us_states_ab_file = "/home/Ashmita/hadoop/Ashmita/Docker/US_State_Abbreviation.js" 
+val us_states_ab = sqlContext.read.json(us_states_ab_file)
+us_states_ab.registerTempTable("us_states_ab")
+val us_states_flattened =us_states.select(us_states("properties.density"),us_states("properties.name"))
+us_states_flattened.registerTempTable("us_states_flattened")
+val yelp_business_file = "/home/Ashmita/hadoop/Ashmita/Docker/ExtractedDataset/yelp_academic_dataset_business.json" 
+val yelp_business = sqlContext.read.json(yelp_business_file)
+yelp_business.registerTempTable("yelp_business")
+
+val us_state_ab_density = sqlContext.sql(""" select us_states_ab.Ab_State,us_states_flattened.density from us_states_ab,us_states_flattened where name = State_Name """)
+us_state_ab_density.registerTempTable("us_state_ab_density")
+val sql_result_new =sqlContext.sql(""" select yelp_business.name,yelp_business.stars,yelp_business.review_count,us_state_ab_density.density,(yelp_business.review_count/us_state_ab_density.density) as review_rate from  us_state_ab_density,yelp_business where state = Ab_State """)
+val row_result = sql_result_new.rdd
+row_result.coalesce(1).saveAsTextFile("/home/Ashmita/hadoop/Ashmita/Docker/4")

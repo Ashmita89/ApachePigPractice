@@ -1,0 +1,12 @@
+val us_states_file = "/home/Ashmita/hadoop/Ashmita/Docker/modified-us-states.js" 
+val us_states = sqlContext.read.json(us_states_file)
+val us_states_ab_file = "/home/Ashmita/hadoop/Ashmita/Docker/US_State_Abbreviation.js" 
+val us_states_ab = sqlContext.read.json(us_states_ab_file)
+val us_states_flattened =us_states.select(us_states("properties.density"),us_states("properties.name"))
+val yelp_business_file = "/home/Ashmita/hadoop/Ashmita/Docker/ExtractedDataset/yelp_academic_dataset_business.json" 
+val yelp_business = sqlContext.read.json(yelp_business_file)
+
+val us_state_ab_density = us_states_flattened.join(us_states_ab,us_states_flattened("name") === us_states_ab("State_Name")).select(us_states_ab("Ab_State"),us_states_flattened("density"))
+val join_table_new = yelp_business.join(us_state_ab_density,yelp_business("state") === us_state_ab_density("Ab_State")).select(yelp_business("name"),yelp_business("stars"),yelp_business("review_count"),us_state_ab_density("density"),(yelp_business("review_count")/us_state_ab_density("density")))
+val row_result = join_table_new.rdd
+row_result.coalesce(1).saveAsTextFile("/home/Ashmita/hadoop/Ashmita/Docker/3")
