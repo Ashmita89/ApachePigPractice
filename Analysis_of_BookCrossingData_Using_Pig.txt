@@ -1,0 +1,149 @@
+REGISTER '/home/Ashmita/hadoop/Ashmita/Docker/Datafujar/datafu-1.2.0.jar';
+REGISTER '/home/Ashmita/hadoop/Ashmita/Docker/twitterjars/elephant-bird-core-4.13.jar';
+REGISTER '/home/Ashmita/hadoop/Ashmita/Docker/twitterjars/elephant-bird-hadoop-compat-4.13.jar';
+REGISTER '/home/Ashmita/hadoop/Ashmita/Docker/twitterjars/elephant-bird-pig-4.13.jar';
+DEFINE Inside datafu.pig.util.InUDF();
+
+
+BOOK_RATING = LOAD '/user/cloudera/FinalProject/BX-BookRatingsCorrected.txt' USING PigStorage(';') AS (user_id:int,isbn:chararray, rating:int);
+BOOKS = LOAD '/user/cloudera/FinalProject/BX-BooksCorrected.txt' USING PigStorage(';') AS (isbn:chararray,booktitle:chararray,bookauthor:chararray,yearofpublication:int,publisher:chararray,imageURLS:chararray,imageURLM:chararray,imageURLL:chararray);
+BOOK_USER = LOAD '/user/cloudera/FinalProject/BX-UsersCorrected.txt' USING PigStorage(';') AS (user_id:int,location:chararray,age:int);
+
+
+--BOOK_RATING = LOAD '/home/Ashmita/hadoop/Ashmita/Docker/FinalProject_dataset/corrected_dataset/BX-BookRatingsCorrected.txt' USING PigStorage(';') AS (user_id:int,isbn:chararray, rating:int);
+--BOOKS = LOAD '/home/Ashmita/hadoop/Ashmita/Docker/FinalProject_dataset/corrected_dataset/BX-BooksCorrected.txt' USING PigStorage(';') AS (isbn:chararray,booktitle:chararray,bookauthor:chararray,yearofpublication:int,publisher:chararray,imageURLS:chararray,imageURLM:chararray,imageURLL:chararray);
+--BOOK_USER = LOAD '/home/Ashmita/hadoop/Ashmita/Docker/FinalProject_dataset/corrected_dataset/BX-UsersCorrected.txt' USING PigStorage(';') AS (user_id:int,location:chararray,age:int);
+
+
+
+--STORE BOOK_RATING into './FinalProjectResult/rating_raw_table';
+--STORE BOOKS into './FinalProjectResult/books_raw_table';
+--STORE BOOK_USER into './FinalProjectResult/book_user_raw_table';
+
+
+by_rating = GROUP BOOK_RATING BY (rating);
+
+--STORE by_rating into './FinalProjectResult/rating_group';
+
+user_age_not_null = FILTER BOOK_USER BY age is not null;
+
+--STORE user_age_not_null into './FinalProjectResult/user_age_not_null';
+
+by_user_age = GROUP user_age_not_null BY (age);
+
+user_by_age_group =FOREACH by_user_age GENERATE FLATTEN(group) AS (age), COUNT(user_age_not_null.user_id) AS no_of_users_count;
+
+--STORE user_by_age_group into './FinalProjectResult/user_by_age_group';
+
+--Limit age range between 1-105 (Considering all other ages -incorrect data)
+
+limit_1_105_age_user =  FILTER user_age_not_null BY age >= 1 AND age <=105;
+
+limit_1_105_by_user_age = GROUP limit_1_105_age_user BY (age);
+
+limit_1_105_user_by_age_group =FOREACH limit_1_105_by_user_age GENERATE FLATTEN(group) AS (age), COUNT(limit_1_105_age_user.user_id) AS no_of_users_count;
+
+--STORE limit_1_105_user_by_age_group into './FinalProjectResult/limit_1_105_user_by_age_group';
+
+age_group_user_count = foreach limit_1_105_user_by_age_group generate ((age - 1) * 7 / (105- 1 + 1))+1 as age_group, age,no_of_users_count;
+group_by_15_yr_age_range = group age_group_user_count by age_group;
+user_strength_age_group = foreach group_by_15_yr_age_range generate group as age_group_classifier, MIN(age_group_user_count.age) as min_age,MAX(age_group_user_count.age) as max_age,SUM(age_group_user_count.no_of_users_count) as total_no_of_users;
+
+--STORE age_group_user_count into './FinalProjectResult/age_group_user_count';
+--STORE group_by_15_yr_age_range into './FinalProjectResult/group_by_15_yr_age_range';
+--STORE user_strength_age_group into './FinalProjectResult/user_strength_age_group';
+
+
+book_rating_join = join BOOK_RATING by isbn, BOOKS by isbn;
+book_user_rating_join = join book_rating_join by user_id,limit_1_105_age_user by user_id;
+
+--chk_user_age_null = FILTER book_user_rating_join BY age is null;
+
+--STORE chk_user_age_null into './FinalProjectResult/chk';
+
+--chk_user_age_null was empty to verify the inner join concept
+
+--hence book_user_rating_join is a joined table which has the books related data,respective rating from users 
+--who are within the age group of 1-105 .
+
+
+book_user_rating_result = FOREACH book_user_rating_join GENERATE book_rating_join::BOOK_RATING::user_id as user_id,book_rating_join::BOOK_RATING::isbn as isbn,book_rating_join::BOOK_RATING::rating as rating,book_rating_join::BOOKS::booktitle as booktitle,book_rating_join::BOOKS::bookauthor as bookauthor,book_rating_join::BOOKS::yearofpublication as yop,book_rating_join::BOOKS::publisher as publisher,limit_1_105_age_user::location as user_loc,limit_1_105_age_user::age as user_age;
+
+--writing the file into output csv file for analysis in other technologies .
+
+--STORE book_user_rating_result INTO './FinalProjectResult/filtered_dataset' USING org.apache.pig.piggybank.storage.CSVExcelStorage();
+
+
+book_info_rating_0 = FILTER book_user_rating_result BY rating == 0;
+--Find Users who give 0 rating for books
+users_who_give_0_rating = GROUP book_info_rating_0 BY (user_id);
+zero_rating_user_id_count_books = FOREACH users_who_give_0_rating GENERATE group as user_id,COUNT(book_info_rating_0.isbn) as no_of_books_reviewed_0;
+
+--STORE zero_rating_user_id_count_books into './FinalProjectResult/zero_rating_user_id_count_books';
+
+sorted_zero_rating_user_id_count_books = ORDER zero_rating_user_id_count_books BY no_of_books_reviewed_0 DESC;
+top10zeroreviewer = LIMIT sorted_zero_rating_user_id_count_books 10;
+
+--STORE sorted_zero_rating_user_id_count_books into './FinalProjectResult/sorted_zero_rating_user_id_count_books';
+STORE top10zeroreviewer into './FinalProjectResult/top10zeroreviewer';
+
+--TOP 10 zero reviewer :(198711,153662,76352,110973,230522,36836,55492,129358,98741,52584);
+
+--Checking the % of books reviewed as zero by the user out of all the books they have reviewed.
+--If % is greater than 60% ,the users can be considered harsh reviewers.
+total_user_ratings_for_top10zerorater = FILTER book_user_rating_result BY Inside(user_id,198711,153662,76352,110973,230522,36836,55492,129358,98741,52584);
+group_total_user_ratings_for_top10zerorater = GROUP total_user_ratings_for_top10zerorater BY user_id;
+count_total_user_ratings_for_top10zerorater = FOREACH group_total_user_ratings_for_top10zerorater GENERATE group as user_id, COUNT(total_user_ratings_for_top10zerorater.isbn) as total_no_of_books_reviewed;
+
+top10zerorater = JOIN count_total_user_ratings_for_top10zerorater by user_id ,top10zeroreviewer by user_id;
+
+top10zerorater_percent = FOREACH top10zerorater GENERATE count_total_user_ratings_for_top10zerorater::user_id as user_id,top10zeroreviewer::no_of_books_reviewed_0 as count_zero_reviews,count_total_user_ratings_for_top10zerorater::total_no_of_books_reviewed as total_no_of_books_reviewed,((top10zeroreviewer::no_of_books_reviewed_0*100)/count_total_user_ratings_for_top10zerorater::total_no_of_books_reviewed) as percentage:double;
+
+
+--STORE top10zerorater into './FinalProjectResult/top10zerorater';
+
+--STORE top10zerorater_percent into './FinalProjectResult/top10zerorater_percent';
+
+STORE top10zerorater_percent INTO './FinalProjectResult/harsh_zeroreviewer' USING org.apache.pig.piggybank.storage.CSVExcelStorage('\t', 'YES_MULTILINE', 'WINDOWS', 'WRITE_OUTPUT_HEADER');
+
+--Analysis of books and their rating
+
+book_rating_group = GROUP book_user_rating_result BY (isbn);
+
+book_rating_group_result = FOREACH book_rating_group GENERATE group as isbn,COUNT(book_user_rating_result.rating) as no_of_rating,AVG(book_user_rating_result.rating) as avg_rating;
+
+sorted_book_rating_group_result = RANK book_rating_group_result BY no_of_rating DESC,avg_rating DESC;
+
+top50reviewed_books = FILTER sorted_book_rating_group_result BY rank_book_rating_group_result <= 50 ;
+
+sortedtop50reviewed_books = ORDER top50reviewed_books BY avg_rating DESC;
+
+STORE sortedtop50reviewed_books INTO './FinalProjectResult/sortedtop50reviewed_books' USING org.apache.pig.piggybank.storage.CSVExcelStorage('\t', 'YES_MULTILINE', 'WINDOWS', 'WRITE_OUTPUT_HEADER');
+
+--To analyze and rank the age ranges based on frequency of book readers in the age range who have the urge to reach out to other Book Lovers 
+reviewer_by_user_age = GROUP book_user_rating_result BY (user_age);
+
+reviewer_by_age_group_distinct_users = foreach reviewer_by_user_age {
+user_id_values = book_user_rating_result.user_id;
+d_user_id_values = distinct user_id_values;
+generate FLATTEN(group) AS (user_age), COUNT(d_user_id_values) AS no_of_reviewer_count; };
+
+review_by_age_group =FOREACH reviewer_by_user_age GENERATE FLATTEN(group) AS (user_age), COUNT(book_user_rating_result.user_id) AS no_of_reviews_count;
+
+
+age_group_review_count = foreach review_by_age_group generate ((user_age - 1) * 7 / (105- 1 + 1))+1 as age_group, user_age,no_of_reviews_count;
+group_by_15_yr_age_range_review = group age_group_review_count by age_group;
+review_count_age_group = foreach group_by_15_yr_age_range_review generate group as age_group_classifier, MIN(age_group_review_count.user_age) as min_age,MAX(age_group_review_count.user_age) as max_age,SUM(age_group_review_count.no_of_reviews_count) as no_of_reviews;
+
+age_group_reviewer_count = foreach reviewer_by_age_group_distinct_users generate ((user_age - 1) * 7 / (105- 1 + 1))+1 as age_group, user_age,no_of_reviewer_count;
+group_by_15_yr_age_range_reviewer = group age_group_reviewer_count by age_group;
+reviewer_strength_age_group = foreach group_by_15_yr_age_range_reviewer generate group as age_group_classifier, MIN(age_group_reviewer_count.user_age) as min_age,MAX(age_group_reviewer_count.user_age) as max_age,SUM(age_group_reviewer_count.no_of_reviewer_count) as no_of_reviewers;
+
+age_group_analysis1 = JOIN user_strength_age_group by age_group_classifier,reviewer_strength_age_group by age_group_classifier,review_count_age_group by age_group_classifier;
+
+age_group_analysis = FOREACH age_group_analysis1 GENERATE  user_strength_age_group::min_age as min_age,user_strength_age_group::max_age as max_age,user_strength_age_group::total_no_of_users as total_no_of_users,reviewer_strength_age_group::no_of_reviewers as no_of_reviewers,review_count_age_group::no_of_reviews as no_of_reviews;
+
+sorted_age_group_analysis = ORDER age_group_analysis BY no_of_reviews DESC;
+
+STORE sorted_age_group_analysis INTO './FinalProjectResult/agegroup_noofreviews' USING org.apache.pig.piggybank.storage.CSVExcelStorage('\t', 'YES_MULTILINE', 'WINDOWS', 'WRITE_OUTPUT_HEADER');
+

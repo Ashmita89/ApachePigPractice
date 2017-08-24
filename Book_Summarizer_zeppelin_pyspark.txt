@@ -1,0 +1,737 @@
+%pyspark
+
+import sys
+print(sys.version)
+
+from pyspark import SparkContext, SparkConf
+from pyspark.mllib.stat import Statistics
+import csv
+
+conf = SparkConf().setAppName('BookSummarizer')
+
+bookfile = \
+    sc.textFile('/home/Ashmita/hadoop/Ashmita/Docker/FinalProject_dataset/zeppelin/corrected_dataset/Filtered_Dataset'
+                )
+
+
+def makebook_kv(str):
+    l = str.split(';')
+    return [l[1], [[
+        int(l[0]),
+        int(l[2]),
+        l[3],
+        l[4],
+        int(l[5]),
+        l[6],
+        l[7],
+        int(l[8]),
+        ]]]
+
+
+tbybook = bookfile.map(lambda line: \
+                       makebook_kv(line)).reduceByKey(lambda a, b: a \
+        + b)
+
+
+def compute_stats_by_book(book_set):
+    rcount = usa = others = Alabama = Alaska = Arizona = Arkansas = \
+        California = Colorado = Connecticut = Delaware = Florida = \
+        Georgia = Hawaii = Idaho = Illinois = Indiana = Iowa = Kansas = \
+        Kentucky = Louisiana = Maine = Maryland = 0
+    Massachusetts = Michigan = Minnesota = Mississippi = Missouri = \
+        Montana = Nebraska = Nevada = New_Hampshire = New_Jersey = \
+        New_Mexico = New_York = North_Carolina = North_Dakota = Ohio = \
+        Oklahoma = Oregon = Pennsylvania = Rhode_Island = 0
+    South_Carolina = South_Dakota = Tennessee = Texas = Utah = \
+        Vermont = Virginia = Washington = West_Virginia = Wisconsin = \
+        Wyoming = 0
+    tot_rating_Alabama = tot_rating_Alaska = tot_rating_Arizona = \
+        tot_rating_Arkansas = tot_rating_California = 0
+    tot_rating_Colorado = tot_rating_Connecticut = \
+        tot_rating_Delaware = tot_rating_Florida = tot_rating_Georgia = \
+        tot_rating_Hawaii = tot_rating_Idaho = tot_rating_Illinois = \
+        tot_rating_Indiana = tot_rating_Iowa = tot_rating_Kansas = 0
+    tot_rating_Kentucky = tot_rating_Louisiana = tot_rating_Maine = \
+        tot_rating_Maryland = tot_rating_Massachusetts = \
+        tot_rating_Michigan = tot_rating_Minnesota = \
+        tot_rating_Mississippi = tot_rating_Missouri = 0
+    tot_rating_Montana = tot_rating_Nebraska = tot_rating_Nevada = \
+        tot_rating_New_Hampshire = tot_rating_New_Jersey = \
+        tot_rating_New_Mexico = tot_rating_New_York = \
+        tot_rating_North_Carolina = tot_rating_North_Dakota = 0
+    tot_rating_Ohio = tot_rating_Oklahoma = tot_rating_Oregon = \
+        tot_rating_Pennsylvania = tot_rating_Rhode_Island = \
+        tot_rating_South_Carolina = tot_rating_South_Dakota = \
+        tot_rating_Tennessee = tot_rating_Texas = tot_rating_Utah = 0
+    tot_rating_Vermont = tot_rating_Virginia = tot_rating_Washington = \
+        tot_rating_West_Virginia = tot_rating_Wisconsin = \
+        tot_rating_Wyoming = tot_rating_others = 0
+    userlist = []
+    for rec in book_set:
+
+        (
+            user_id,
+            rating,
+            booktitle,
+            bookauthor,
+            yop,
+            publisher,
+            user_loc,
+            user_age,
+            ) = rec
+        if user_id not in userlist:
+            userlist.append(user_id)
+
+        # considering second column is state
+
+            t1 = user_loc.split(',')[1]
+            if 'Alabama' in t1 or 'alabama' in t1:
+                Alabama += 1
+                tot_rating_Alabama += rating
+                usa += 1
+            elif 'Alaska' in t1 or 'alaska' in t1:
+                Alaska += 1
+                tot_rating_Alaska += rating
+                usa += 1
+            elif 'Arizona' in t1 or 'arizona' in t1:
+                Arizona += 1
+                tot_rating_Arizona += rating
+                usa += 1
+            elif 'Arkansas' in t1 or 'arkansas' in t1:
+                Arkansas += 1
+                tot_rating_Arkansas += rating
+                usa += 1
+            elif 'California' in t1 or 'california' in t1:
+                California += 1
+                tot_rating_California += rating
+                usa += 1
+            elif 'Colorado' in t1 or 'colorado' in t1:
+                Colorado += 1
+                tot_rating_Colorado += rating
+                usa += 1
+            elif 'Connecticut' in t1 or 'connecticut' in t1:
+                Connecticut += 1
+                tot_rating_Connecticut += rating
+                usa += 1
+            elif 'Delaware' in t1 or 'delaware' in t1:
+                Delaware += 1
+                tot_rating_Delaware += rating
+                usa += 1
+            elif 'Florida' in t1 or 'florida' in t1:
+                Florida += 1
+                tot_rating_Florida += rating
+                usa += 1
+            elif 'Georgia' in t1 or 'georgia' in t1:
+                Georgia += 1
+                tot_rating_Georgia += rating
+                usa += 1
+            elif 'Hawaii' in t1 or 'hawaii' in t1:
+                Hawaii += 1
+                tot_rating_Hawaii += rating
+                usa += 1
+            elif 'Idaho' in t1 or 'idaho' in t1:
+                Idaho += 1
+                tot_rating_Idaho += rating
+                usa += 1
+            elif 'Illinois' in t1 or 'illinois' in t1:
+                Illinois += 1
+                tot_rating_Illinois += rating
+                usa += 1
+            elif 'Indiana' in t1 or 'indiana' in t1:
+                Indiana += 1
+                tot_rating_Indiana += rating
+                usa += 1
+            elif 'Iowa' in t1 or 'iowa' in t1:
+                Iowa += 1
+                tot_rating_Iowa += rating
+                usa += 1
+            elif 'Kansas' in t1 or 'kansas' in t1:
+                Kansas += 1
+                tot_rating_Kansas += rating
+                usa += 1
+            elif 'Kentucky' in t1 or 'kentucky' in t1:
+                Kentucky += 1
+                tot_rating_Kentucky += rating
+                usa += 1
+            elif 'Louisiana' in t1 or 'louisiana' in t1:
+                Louisiana += 1
+                tot_rating_Louisiana += rating
+                usa += 1
+            elif 'Maine' in t1 or 'maine' in t1:
+                Maine += 1
+                tot_rating_Maine += rating
+                usa += 1
+            elif 'Maryland' in t1 or 'maryland' in t1:
+                Maryland += 1
+                tot_rating_Maryland += rating
+                usa += 1
+            elif 'Massachusetts' in t1 or 'massachusetts' in t1:
+                Massachusetts += 1
+                tot_rating_Massachusetts += rating
+                usa += 1
+            elif 'Michigan' in t1 or 'michigan' in t1:
+                Michigan += 1
+                tot_rating_Michigan += rating
+                usa += 1
+            elif 'Minnesota' in t1 or 'minnesota' in t1:
+                Minnesota += 1
+                tot_rating_Minnesota += rating
+                usa += 1
+            elif 'Mississippi' in t1 or 'mississippi' in t1:
+                Mississippi += 1
+                tot_rating_Mississippi += rating
+                usa += 1
+            elif 'Missouri' in t1 or 'missouri' in t1:
+                Missouri += 1
+                tot_rating_Missouri += rating
+                usa += 1
+            elif 'Montana' in t1 or 'montana' in t1:
+                Montana += 1
+                tot_rating_Montana += rating
+                usa += 1
+            elif 'Nebraska' in t1 or 'nebraska' in t1:
+                Nebraska += 1
+                tot_rating_Nebraska += rating
+                usa += 1
+            elif 'Nevada' in t1 or 'nevada' in t1:
+                Nevada += 1
+                tot_rating_Nevada += rating
+                usa += 1
+            elif 'New Hampshire' in t1 or 'new hampshire' in t1:
+                New_Hampshire += 1
+                tot_rating_New_Hampshire += rating
+                usa += 1
+            elif 'New Jersey' in t1 or 'new jersey' in t1:
+                New_Jersey += 1
+                tot_rating_New_Jersey += rating
+                usa += 1
+            elif 'New Mexico' in t1 or 'new mexico' in t1:
+                New_Mexico += 1
+                tot_rating_New_Mexico += rating
+                usa += 1
+            elif 'New York' in t1 or 'new york' in t1 or 'NY' in t1 \
+                or 'ny ' in t1 or 'NYC ' in t1:
+                New_York += 1
+                tot_rating_New_York += rating
+                usa += 1
+            elif 'North Carolina' in t1 or 'north carolina' in t1:
+                North_Carolina += 1
+                tot_rating_North_Carolina += rating
+                usa += 1
+            elif 'North Dakota' in t1 or 'north dakota' in t1:
+                North_Dakota += 1
+                tot_rating_North_Dakota += rating
+                usa += 1
+            elif 'Ohio' in t1 or 'ohio' in t1:
+                Ohio += 1
+                tot_rating_Ohio += rating
+                usa += 1
+            elif 'Oklahoma' in t1 or 'oklahoma' in t1:
+                Oklahoma += 1
+                tot_rating_Oklahoma += rating
+                usa += 1
+            elif 'Oregon' in t1 or 'oregon' in t1:
+                Oregon += 1
+                tot_rating_Oregon += rating
+                usa += 1
+            elif 'Pennsylvania' in t1 or 'pennsylvania' in t1:
+                Pennsylvania += 1
+                tot_rating_Pennsylvania += rating
+                usa += 1
+            elif 'Rhode Island' in t1 or 'rhode island' in t1:
+                Rhode_Island += 1
+                tot_rating_Rhode_Island += rating
+                usa += 1
+            elif 'South Carolina' in t1 or 'south carolina' in t1:
+                South_Carolina += 1
+                tot_rating_South_Carolina += rating
+                usa += 1
+            elif 'South Dakota' in t1 or 'south dakota' in t1:
+                South_Dakota += 1
+                tot_rating_South_Dakota += rating
+                usa += 1
+            elif 'Tennessee' in t1 or 'tennessee' in t1:
+                Tennessee += 1
+                tot_rating_Tennessee += rating
+                usa += 1
+            elif 'Texas' in t1 or 'texas' in t1:
+                Texas += 1
+                tot_rating_Texas += rating
+                usa += 1
+            elif 'Utah' in t1 or 'utah' in t1:
+                Utah += 1
+                tot_rating_Utah += rating
+                usa += 1
+            elif 'Vermont' in t1 or 'vermont' in t1:
+                Vermont += 1
+                tot_rating_Vermont += rating
+                usa += 1
+            elif 'Virginia' in t1 or 'virginia' in t1:
+                Virginia += 1
+                tot_rating_Virginia += rating
+                usa += 1
+            elif 'Washington' in t1 or 'washington' in t1:
+                Washington += 1
+                tot_rating_Washington += rating
+                usa += 1
+            elif 'West Virginia' in t1 or 'west virginia' in t1:
+                West_Virginia += 1
+                tot_rating_West_Virginia += rating
+                usa += 1
+            elif 'Wisconsin' in t1 or 'wisconsin' in t1:
+                Wisconsin += 1
+                tot_rating_Wisconsin += rating
+                usa += 1
+            elif 'Wyoming' in t1 or 'wyoming' in t1:
+                Wyoming += 1
+                tot_rating_Wyoming += rating
+                usa += 1
+            else:
+                others += 1
+                tot_rating_others += rating
+            return [
+                len(userlist),
+                Alabama,
+                Alaska,
+                Arizona,
+                Arkansas,
+                California,
+                Colorado,
+                Connecticut,
+                Delaware,
+                Florida,
+                Georgia,
+                Hawaii,
+                Idaho,
+                Illinois,
+                Indiana,
+                Iowa,
+                Kansas,
+                Kentucky,
+                Louisiana,
+                Maine,
+                Maryland,
+                Massachusetts,
+                Michigan,
+                Minnesota,
+                Mississippi,
+                Missouri,
+                Montana,
+                Nebraska,
+                Nevada,
+                New_Hampshire,
+                New_Jersey,
+                New_Mexico,
+                New_York,
+                North_Carolina,
+                North_Dakota,
+                Ohio,
+                Oklahoma,
+                Oregon,
+                Pennsylvania,
+                Rhode_Island,
+                South_Carolina,
+                South_Dakota,
+                Tennessee,
+                Texas,
+                Utah,
+                Vermont,
+                Virginia,
+                Washington,
+                West_Virginia,
+                Wisconsin,
+                Wyoming,
+                usa,
+                others,
+                tot_rating_Alabama / Alabama if Alabama> 0 else 1,
+                tot_rating_Alaska / Alaska if Alaska> 0 else 1,
+                tot_rating_Arizona / Arizona if Arizona > 0 else 1,
+                tot_rating_Arkansas / Arkansas if Arkansas > 0 else 1,
+                tot_rating_California / California if California > 0 else 1,
+                tot_rating_Colorado / Colorado if Colorado > 0 else 1,
+                tot_rating_Connecticut / Connecticut if Connecticut > 0 else 1,
+                tot_rating_Delaware / Delaware if Delaware > 0 else 1,
+                tot_rating_Florida / Florida if Florida > 0 else 1,
+                tot_rating_Georgia / Georgia if Georgia> 0 else 1,
+                tot_rating_Hawaii / Hawaii if Hawaii > 0 else 1,
+                tot_rating_Idaho / Idaho if Idaho > 0 else 1,
+                tot_rating_Illinois / Illinois if Illinois> 0 else 1,
+                tot_rating_Indiana / Indiana if Indiana > 0 else 1,
+                tot_rating_Iowa / Iowa if Iowa > 0 else 1,
+                tot_rating_Kansas / Kansas if Kansas > 0 else 1,
+                tot_rating_Kentucky / Kentucky if Kentucky > 0 else 1,
+                tot_rating_Louisiana / Louisiana if Louisiana > 0 else 1,
+                tot_rating_Maine / Maine if Maine > 0 else 1,
+                tot_rating_Maryland / Maryland if Maryland > 0 else 1,
+                tot_rating_Massachusetts / Massachusetts if Massachusetts > 0 else 1,
+                tot_rating_Michigan / Michigan if Michigan > 0 else 1,
+                tot_rating_Minnesota / Minnesota if Minnesota> 0 else 1,
+                tot_rating_Mississippi / Mississippi if Mississippi > 0 else 1,
+                tot_rating_Missouri / Missouri if Missouri > 0 else 1,
+                tot_rating_Montana / Montana if Montana> 0 else 1,
+                tot_rating_Nebraska / Nebraska if Nebraska > 0 else 1,
+                tot_rating_Nevada / Nevada if Nevada > 0 else 1,
+                tot_rating_New_Hampshire / New_Hampshire if New_Hampshire > 0 else 1,
+                tot_rating_New_Jersey / New_Jersey if New_Jersey > 0 else 1,
+                tot_rating_New_Mexico / New_Mexico if New_Mexico > 0 else 1,
+                tot_rating_New_York / New_York if New_York > 0 else 1,
+                tot_rating_North_Carolina / North_Carolina if North_Carolina > 0 else 1,
+                tot_rating_North_Dakota / North_Dakota if North_Dakota > 0 else 1,
+                tot_rating_Ohio / Ohio if Ohio > 0 else 1,
+                tot_rating_Oklahoma / Oklahoma if Oklahoma> 0 else 1,
+                tot_rating_Oregon / Oregon if Oregon > 0 else 1,
+                tot_rating_Pennsylvania / Pennsylvania if Pennsylvania> 0 else 1,
+                tot_rating_Rhode_Island / Rhode_Island if Rhode_Island> 0 else 1,
+                tot_rating_South_Carolina / South_Carolina if South_Carolina> 0 else 1,
+                tot_rating_South_Dakota / South_Dakota if South_Dakota > 0 else 1,
+                tot_rating_Tennessee / Tennessee if Tennessee > 0 else 1,
+                tot_rating_Texas / Texas if Texas > 0 else 1,
+                tot_rating_Utah / Utah if Utah > 0 else 1,
+                tot_rating_Vermont / Vermont if Vermont > 0 else 1,
+                tot_rating_Virginia / Virginia if Virginia > 0 else 1,
+                tot_rating_Washington / Washington if Washington > 0 else 1,
+                tot_rating_West_Virginia / West_Virginia if West_Virginia > 0 else 1,
+                tot_rating_Wisconsin / Wisconsin if Wisconsin > 0 else 1,
+                tot_rating_Wyoming / Wyoming if Wyoming> 0 else 1,
+                tot_rating_others / others if others > 0 else 1
+                ]
+
+
+# compute profile for each book
+
+bookdata = tbybook.mapValues(lambda a: compute_stats_by_book(a))
+
+# compute aggregate stats
+
+agg_book_data = Statistics.colStats(bookdata.map(lambda x: x[1]))
+
+for (k, v) in bookdata.collect():
+
+    (
+        no_of_reviewer,
+        Alabama,
+        Alaska,
+        Arizona,
+        Arkansas,
+        California,
+        Colorado,
+        Connecticut,
+        Delaware,
+        Florida,
+        Georgia,
+        Hawaii,
+        Idaho,
+        Illinois,
+        Indiana,
+        Iowa,
+        Kansas,
+        Kentucky,
+        Louisiana,
+        Maine,
+        Maryland,
+        Massachusetts,
+        Michigan,
+        Minnesota,
+        Mississippi,
+        Missouri,
+        Montana,
+        Nebraska,
+        Nevada,
+        New_Hampshire,
+        New_Jersey,
+        New_Mexico,
+        New_York,
+        North_Carolina,
+        North_Dakota,
+        Ohio,
+        Oklahoma,
+        Oregon,
+        Pennsylvania,
+        Rhode_Island,
+        South_Carolina,
+        South_Dakota,
+        Tennessee,
+        Texas,
+        Utah,
+        Vermont,
+        Virginia,
+        Washington,
+        West_Virginia,
+        Wisconsin,
+        Wyoming,
+        usa,
+        others,
+        avg_rating_Alabama,
+        avg_rating_Alaska,
+        avg_rating_Arizona,
+        avg_rating_Arkansas,
+        avg_rating_California,
+        avg_rating_Colorado,
+        avg_rating_Connecticut,
+        avg_rating_Delaware,
+        avg_rating_Florida,
+        avg_rating_Georgia,
+        avg_rating_Hawaii,
+        avg_rating_Idaho,
+        avg_rating_Illinois,
+        avg_rating_Indiana,
+        avg_rating_Iowa,
+        avg_rating_Kansas,
+        avg_rating_Kentucky,
+        avg_rating_Louisiana,
+        avg_rating_Maine,
+        avg_rating_Maryland,
+        avg_rating_Massachusetts,
+        avg_rating_Michigan,
+        avg_rating_Minnesota,
+        avg_rating_Mississippi,
+        avg_rating_Missouri,
+        avg_rating_Montana,
+        avg_rating_Nebraska,
+        avg_rating_Nevada,
+        avg_rating_New_Hampshire,
+        avg_rating_New_Jersey,
+        avg_rating_New_Mexico,
+        avg_rating_New_York,
+        avg_rating_North_Carolina,
+        avg_rating_North_Dakota,
+        avg_rating_Ohio,
+        avg_rating_Oklahoma,
+        avg_rating_Oregon,
+        avg_rating_Pennsylvania,
+        avg_rating_Rhode_Island,
+        avg_rating_South_Carolina,
+        avg_rating_South_Dakota,
+        avg_rating_Tennessee,
+        avg_rating_Texas,
+        avg_rating_Utah,
+        avg_rating_Vermont,
+        avg_rating_Virginia,
+        avg_rating_Washington,
+        avg_rating_West_Virginia,
+        avg_rating_Wisconsin,
+        avg_rating_Wyoming,
+        avg_rating_Others
+        ) = v
+
+bookdata.saveAsTextFile("/home/Ashmita/hadoop/Ashmita/Docker/FinalProject_dataset/zeppelin/result_dataset/booksummary_table")
+
+with open('/home/Ashmita/hadoop/Ashmita/Docker/FinalProject_dataset/zeppelin/result_dataset/booksummary.csv', 'a', newline='') as csvfile:
+        fwriter = csv.writer(csvfile, delimiter=';', quotechar='|',quoting=csv.QUOTE_MINIMAL)
+        fwriter.writerow(bytes(str([
+            no_of_reviewer,
+            Alabama,
+            Alaska,
+            Arizona,
+            Arkansas,
+            California,
+            Colorado,
+            Connecticut,
+            Delaware,
+            Florida,
+            Georgia,
+            Hawaii,
+            Idaho,
+            Illinois,
+            Indiana,
+            Iowa,
+            Kansas,
+            Kentucky,
+            Louisiana,
+            Maine,
+            Maryland,
+            Massachusetts,
+            Michigan,
+            Minnesota,
+            Mississippi,
+            Missouri,
+            Montana,
+            Nebraska,
+            Nevada,
+            New_Hampshire,
+            New_Jersey,
+            New_Mexico,
+            New_York,
+            North_Carolina,
+            North_Dakota,
+            Ohio,
+            Oklahoma,
+            Oregon,
+            Pennsylvania,
+            Rhode_Island,
+            South_Carolina,
+            South_Dakota,
+            Tennessee,
+            Texas,
+            Utah,
+            Vermont,
+            Virginia,
+            Washington,
+            West_Virginia,
+            Wisconsin,
+            Wyoming,
+            usa,
+            others,
+            avg_rating_Alabama,
+            avg_rating_Alaska,
+            avg_rating_Arizona,
+            avg_rating_Arkansas,
+            avg_rating_California,
+            avg_rating_Colorado,
+            avg_rating_Connecticut,
+            avg_rating_Delaware,
+            avg_rating_Florida,
+            avg_rating_Georgia,
+            avg_rating_Hawaii,
+            avg_rating_Idaho,
+            avg_rating_Illinois,
+            avg_rating_Indiana,
+            avg_rating_Iowa,
+            avg_rating_Kansas,
+            avg_rating_Kentucky,
+            avg_rating_Louisiana,
+            avg_rating_Maine,
+            avg_rating_Maryland,
+            avg_rating_Massachusetts,
+            avg_rating_Michigan,
+            avg_rating_Minnesota,
+            avg_rating_Mississippi,
+            avg_rating_Missouri,
+            avg_rating_Montana,
+            avg_rating_Nebraska,
+            avg_rating_Nevada,
+            avg_rating_New_Hampshire,
+            avg_rating_New_Jersey,
+            avg_rating_New_Mexico,
+            avg_rating_New_York,
+            avg_rating_North_Carolina,
+            avg_rating_North_Dakota,
+            avg_rating_Ohio,
+            avg_rating_Oklahoma,
+            avg_rating_Oregon,
+            avg_rating_Pennsylvania,
+            avg_rating_Rhode_Island,
+            avg_rating_South_Carolina,
+            avg_rating_South_Dakota,
+            avg_rating_Tennessee,
+            avg_rating_Texas,
+            avg_rating_Utah,
+            avg_rating_Vermont,
+            avg_rating_Virginia,
+            avg_rating_Washington,
+            avg_rating_West_Virginia,
+            avg_rating_Wisconsin,
+            avg_rating_Wyoming,
+            avg_rating_Others]),'UTF-8'))
+
+with open('/home/Ashmita/hadoop/Ashmita/Docker/FinalProject_dataset/zeppelin/result_dataset/book_aggregate.csv', 'a', newline='') as csvfile:
+    fwriter = csv.writer(csvfile, delimiter=';', quotechar='|',quoting=csv.QUOTE_MINIMAL)
+    fwriter.writerow(bytes(str([
+        agg_book_data.mean()[0],
+        agg_book_data.mean()[1],
+        agg_book_data.mean()[2],
+        agg_book_data.mean()[3],
+        agg_book_data.mean()[4],
+        agg_book_data.mean()[5],
+        agg_book_data.mean()[6],
+        agg_book_data.mean()[7],
+        agg_book_data.mean()[8],
+        agg_book_data.mean()[9],
+        agg_book_data.mean()[10],
+        agg_book_data.mean()[11],
+        agg_book_data.mean()[12],
+        agg_book_data.mean()[13],
+        agg_book_data.mean()[14],
+        agg_book_data.mean()[15],
+        agg_book_data.mean()[16],
+        agg_book_data.mean()[17],
+        agg_book_data.mean()[18],
+        agg_book_data.mean()[19],
+        agg_book_data.mean()[20],
+        agg_book_data.mean()[21],
+        agg_book_data.mean()[22],
+        agg_book_data.mean()[23],
+        agg_book_data.mean()[24],
+        agg_book_data.mean()[25],
+        agg_book_data.mean()[26],
+        agg_book_data.mean()[27],
+        agg_book_data.mean()[28],
+        agg_book_data.mean()[29],
+        agg_book_data.mean()[30],
+        agg_book_data.mean()[31],
+        agg_book_data.mean()[32],
+        agg_book_data.mean()[33],
+        agg_book_data.mean()[34],
+        agg_book_data.mean()[35],
+        agg_book_data.mean()[36],
+        agg_book_data.mean()[37],
+        agg_book_data.mean()[38],
+        agg_book_data.mean()[39],
+        agg_book_data.mean()[40],
+        agg_book_data.mean()[41],
+        agg_book_data.mean()[42],
+        agg_book_data.mean()[43],
+        agg_book_data.mean()[44],
+        agg_book_data.mean()[45],
+        agg_book_data.mean()[46],
+        agg_book_data.mean()[47],
+        agg_book_data.mean()[48],
+        agg_book_data.mean()[49],
+        agg_book_data.mean()[50],
+        agg_book_data.mean()[51],
+        agg_book_data.mean()[52],
+        agg_book_data.mean()[53],
+        agg_book_data.mean()[54],
+        agg_book_data.mean()[55],
+        agg_book_data.mean()[56],
+        agg_book_data.mean()[57],
+        agg_book_data.mean()[58],
+        agg_book_data.mean()[59],
+        agg_book_data.mean()[60],
+        agg_book_data.mean()[61],
+        agg_book_data.mean()[62],
+        agg_book_data.mean()[63],
+        agg_book_data.mean()[64],
+        agg_book_data.mean()[65],
+        agg_book_data.mean()[66],
+        agg_book_data.mean()[67],
+        agg_book_data.mean()[68],
+        agg_book_data.mean()[69],
+        agg_book_data.mean()[70],
+        agg_book_data.mean()[71],
+        agg_book_data.mean()[72],
+        agg_book_data.mean()[73],
+        agg_book_data.mean()[74],
+        agg_book_data.mean()[75],
+        agg_book_data.mean()[76],
+        agg_book_data.mean()[77],
+        agg_book_data.mean()[78],
+        agg_book_data.mean()[79],
+        agg_book_data.mean()[80],
+        agg_book_data.mean()[81],
+        agg_book_data.mean()[82],
+        agg_book_data.mean()[83],
+        agg_book_data.mean()[84],
+        agg_book_data.mean()[85],
+        agg_book_data.mean()[86],
+        agg_book_data.mean()[87],
+        agg_book_data.mean()[88],
+        agg_book_data.mean()[89],
+        agg_book_data.mean()[90],
+        agg_book_data.mean()[91],
+        agg_book_data.mean()[92],
+        agg_book_data.mean()[93],
+        agg_book_data.mean()[94],
+        agg_book_data.mean()[95],
+        agg_book_data.mean()[96],
+        agg_book_data.mean()[97],
+        agg_book_data.mean()[98],
+        agg_book_data.mean()[99],
+        agg_book_data.mean()[100],
+        agg_book_data.mean()[101],
+        agg_book_data.mean()[102],
+        agg_book_data.mean()[103]
+        ]),'UTF-8'))
+
+
+			
